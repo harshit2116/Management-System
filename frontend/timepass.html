@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Fun Game Zone!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* ===== MENU STYLES ===== */
+        #menu {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #menu h1 {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        #menu p {
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 40px;
+            font-size: 1.2rem;
+        }
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            max-width: 900px;
+            width: 100%;
+        }
+        .game-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .game-card .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        .game-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+        }
+        .game-card p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* ===== COMMON GAME STYLES ===== */
+        .game-screen {
+            display: none;
+            min-height: 100vh;
+            position: relative;
+        }
+        .game-screen.active {
+            display: block;
+        }
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .back-btn:hover {
+            transform: scale(1.1);
+            background: white;
+        }
+        .score-board {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #764ba2;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        
+        /* ===== GAME 1: CATCH EMOJI ===== */
+        #game1 { cursor: crosshair; overflow: hidden; }
+        #game1-area {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        .emoji {
+            position: absolute;
+            font-size: 3rem;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+            animation: float 2s ease-in-out infinite;
+        }
+        .emoji:hover { transform: scale(1.3); }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .popped { animation: pop 0.3s ease-out forwards; }
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        #game1-combo {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .sparkle {
+            position: absolute;
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: sparkle 0.5s ease-out forwards;
+        }
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+        }
+        
+        /* ===== GAME 2: MEMORY MATCH ===== */
+        #game2 { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            gap: 15px;
+            justify-content: center;
+            padding-top: 100px;
+        }
+        .memory-card {
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .memory-card.hidden { background: #2c3e50; }
+        .memory-card.hidden::after { content: '❓'; }
+        .memory-card.matched {
+            background: #27ae60;
+            transform: scale(0.95);
+            cursor: default;
+        }
+        
+        /* ===== GAME 3: WHACK-A-MOLE ===== */
+        #game3 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .mole-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 20px;
+            justify-content: center;
+            padding-top: 120px;
+        }
+        .mole-hole {
+            width: 100px;
+            height: 100px;
+            background: #8B4513;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s;
+        }
+        .mole-hole.active {
+            background: #654321;
+            transform: scale(1.1);
+        }
+        .mole-hole.hit {
+            animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        /* ===== GAME 4: REACTION TIME ===== */
+        #game4 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        #reaction-box {
+            width: 300px;
+            height: 300px;
+            margin: 150px auto 0;
+            background: #e74c3c;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        #reaction-box.waiting { background: #f39c12; }
+        #reaction-box.go { background: #27ae60; }
+        #reaction-box.result { background: #3498db; }
+        #reaction-stats {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 1.2rem;
+        }
+        
+        /* ===== GAME 5: TYPING SPEED ===== */
+        #game5 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        #typing-container {
+            max-width: 600px;
+            margin: 120px auto 0;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        #typing-word {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+        #typing-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5rem;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #typing-input:focus { border-color: #667eea; }
+        #typing-input.correct { border-color: #27ae60; background: #e8f5e9; }
+        #typing-input.wrong { border-color: #e74c3c; background: #ffebee; }
+        #typing-timer {
+            font-size: 3rem;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        
+        .game-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* ===== GAME 6: SNAKE ===== */
+        #game6 { background: linear-gradient(135deg, #232526 0%, #414345 100%); }
+        #snake-canvas {
+            display: block;
+            margin: 100px auto 0;
+            border: 4px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,255,0,0.3);
+        }
+        #snake-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .snake-btn {
+            padding: 15px 25px;
+            font-size: 1.5rem;
+            margin: 5px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #444;
+            color: white;
+        }
+        .snake-btn:active { background: #666; }
+        
+        /* ===== GAME 7: COLOR GUESS ===== */
+        #game7 { background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); }
+        #color-box {
+            width: 200px;
+            height: 200px;
+            margin: 100px auto 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        #color-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .color-option {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: white;
+            color: #333;
+            transition: all 0.2s;
+            font-family: monospace;
+        }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.correct { background: #27ae60; color: white; }
+        .color-option.wrong { background: #e74c3c; color: white; }
+        
+        /* ===== GAME 8: SIMON SAYS ===== */
+        #game8 { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); }
+        .simon-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 150px);
+            gap: 15px;
+            justify-content: center;
+            margin-top: 100px;
+        }
+        .simon-btn {
+            width: 150px;
+            height: 150px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.1s;
+            opacity: 0.7;
+        }
+        .simon-btn:hover { opacity: 0.9; }
+        .simon-btn.flash { opacity: 1; transform: scale(1.1); box-shadow: 0 0 30px currentColor; }
+        .simon-btn.red { background: #e74c3c; }
+        .simon-btn.blue { background: #3498db; }
+        .simon-btn.green { background: #27ae60; }
+        .simon-btn.yellow { background: #f1c40f; }
+        #simon-info {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 1.3rem;
+        }
+        
+        /* ===== GAME 9: COOKIE CLICKER ===== */
+        #game9 { background: linear-gradient(135deg, #d4a574 0%, #8b5a2b 100%); }
+        #cookie {
+            font-size: 12rem;
+            cursor: pointer;
+            display: block;
+            margin: 80px auto 20px;
+            transition: transform 0.1s;
+            user-select: none;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+        #cookie:hover { transform: scale(1.05); }
+        #cookie:active { transform: scale(0.95); }
+        #cookie-stats {
+            text-align: center;
+            color: white;
+        }
+        #cookie-stats h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        #cookie-stats p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .cookie-upgrades {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .upgrade-btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.9);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .upgrade-btn:hover { transform: scale(1.05); }
+        .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .float-text {
+            position: absolute;
+            font-size: 1.5rem;
+            color: #fff;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-80px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== MAIN MENU ===== -->
+    <div id="menu">
+        <h1>🎮 Fun Game Zone</h1>
+        <p>Pick a game and have fun!</p>
+        <div class="game-grid">
+            <div class="game-card" onclick="startGame(1)">
+                <div class="icon">🎯</div>
+                <h3>Catch the Emoji</h3>
+                <p>Click emojis before they disappear!</p>
+            </div>
+            <div class="game-card" onclick="startGame(2)">
+                <div class="icon">🧠</div>
+                <h3>Memory Match</h3>
+                <p>Find all matching pairs!</p>
+            </div>
+            <div class="game-card" onclick="startGame(3)">
+                <div class="icon">🔨</div>
+                <h3>Whack-a-Mole</h3>
+                <p>Whack the moles as they pop up!</p>
+            </div>
+            <div class="game-card" onclick="startGame(4)">
+                <div class="icon">⚡</div>
+                <h3>Reaction Time</h3>
+                <p>Test your reflexes!</p>
+            </div>
+            <div class="game-card" onclick="startGame(5)">
+                <div class="icon">⌨️</div>
+                <h3>Typing Speed</h3>
+                <p>Type as fast as you can!</p>
+            </div>
+            <div class="game-card" onclick="startGame(6)">
+                <div class="icon">🐍</div>
+                <h3>Snake</h3>
+                <p>Classic snake - eat & grow!</p>
+            </div>
+            <div class="game-card" onclick="startGame(7)">
+                <div class="icon">🎨</div>
+                <h3>Color Guess</h3>
+                <p>Guess the RGB color!</p>
+            </div>
+            <div class="game-card" onclick="startGame(8)">
+                <div class="icon">🔴</div>
+                <h3>Simon Says</h3>
+                <p>Remember the pattern!</p>
+            </div>
+            <div class="game-card" onclick="startGame(9)">
+                <div class="icon">🍪</div>
+                <h3>Cookie Clicker</h3>
+                <p>Click for cookies!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== GAME 1: CATCH EMOJI ===== -->
+    <div id="game1" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">🎯 Score: <span id="game1-score">0</span></div>
+        <div id="game1-combo"></div>
+        <div id="game1-area"></div>
+        <div class="game-message">Click emojis as fast as you can! 🚀</div>
+    </div>
+
+    <!-- ===== GAME 2: MEMORY MATCH ===== -->
+    <div id="game2" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">🧠 Moves: <span id="game2-moves">0</span></div>
+        <div class="memory-grid" id="memory-grid"></div>
+        <div class="game-message" id="game2-msg">Find all the matching pairs!</div>
+    </div>
+
+    <!-- ===== GAME 3: WHACK-A-MOLE ===== -->
+    <div id="game3" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">🔨 Score: <span id="game3-score">0</span> | ⏱️ <span id="game3-time">30</span>s</div>
+        <div class="mole-grid" id="mole-grid"></div>
+        <div class="game-message" id="game3-msg">Whack the moles! 🐹</div>
+    </div>
+
+    <!-- ===== GAME 4: REACTION TIME ===== -->
+    <div id="game4" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div id="reaction-box">Click to Start!</div>
+        <div id="reaction-stats"></div>
+    </div>
+
+    <!-- ===== GAME 5: TYPING SPEED ===== -->
+    <div id="game5" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">⌨️ Words: <span id="game5-score">0</span></div>
+        <div id="typing-container">
+            <div id="typing-timer">30</div>
+            <div id="typing-word">Press Start!</div>
+            <input type="text" id="typing-input" placeholder="Type here..." disabled>
+            <button onclick="startTypingGame()" style="margin-top:20px; padding:15px 40px; font-size:1.2rem; border:none; background:#667eea; color:white; border-radius:10px; cursor:pointer;">Start Game</button>
+        </div>
+    </div>
+
+    <!-- ===== GAME 6: SNAKE ===== -->
+    <div id="game6" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">🐍 Score: <span id="game6-score">0</span></div>
+        <canvas id="snake-canvas" width="400" height="400"></canvas>
+        <div id="snake-controls">
+            <div><button class="snake-btn" onclick="snakeDir('up')">⬆️</button></div>
+            <div>
+                <button class="snake-btn" onclick="snakeDir('left')">⬅️</button>
+                <button class="snake-btn" onclick="snakeDir('down')">⬇️</button>
+                <button class="snake-btn" onclick="snakeDir('right')">➡️</button>
+            </div>
+        </div>
+        <div class="game-message">Use arrow keys or buttons to move! 🎮</div>
+    </div>
+
+    <!-- ===== GAME 7: COLOR GUESS ===== -->
+    <div id="game7" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">🎨 Score: <span id="game7-score">0</span> | Streak: <span id="game7-streak">0</span></div>
+        <div id="color-box"></div>
+        <div id="color-options"></div>
+        <div class="game-message" id="game7-msg">Guess the RGB color code!</div>
+    </div>
+
+    <!-- ===== GAME 8: SIMON SAYS ===== -->
+    <div id="game8" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div class="score-board">🔴 Level: <span id="game8-level">1</span></div>
+        <div class="simon-grid" id="simon-grid">
+            <button class="simon-btn red" data-color="red"></button>
+            <button class="simon-btn blue" data-color="blue"></button>
+            <button class="simon-btn green" data-color="green"></button>
+            <button class="simon-btn yellow" data-color="yellow"></button>
+        </div>
+        <div id="simon-info">Watch the pattern, then repeat it!</div>
+        <button onclick="startSimon()" id="simon-start" style="display:block; margin:20px auto; padding:15px 40px; font-size:1.2rem; border:none; background:white; color:#333; border-radius:10px; cursor:pointer;">Start Game</button>
+    </div>
+
+    <!-- ===== GAME 9: COOKIE CLICKER ===== -->
+    <div id="game9" class="game-screen">
+        <button class="back-btn" onclick="goToMenu()">⬅️ Menu</button>
+        <div id="cookie-stats">
+            <h2>🍪 <span id="cookie-count">0</span></h2>
+            <p><span id="cookies-per-sec">0</span> cookies/sec</p>
+        </div>
+        <div id="cookie" onclick="clickCookie(event)">🍪</div>
+        <div class="cookie-upgrades">
+            <button class="upgrade-btn" onclick="buyUpgrade('cursor')" id="buy-cursor">👆 Cursor (10🍪)<br><small>+1/click</small></button>
+            <button class="upgrade-btn" onclick="buyUpgrade('grandma')" id="buy-grandma">👵 Grandma (50🍪)<br><small>+1/sec</small></button>
+            <button class="upgrade-btn" onclick="buyUpgrade('farm')" id="buy-farm">🌾 Farm (200🍪)<br><small>+5/sec</small></button>
+            <button class="upgrade-btn" onclick="buyUpgrade('factory')" id="buy-factory">🏭 Factory (500🍪)<br><small>+20/sec</small></button>
+        </div>
+    </div>
+
+    <script>
+        // ===== NAVIGATION =====
+        let currentGame = null;
+        let gameIntervals = [];
+        let gameTimeouts = [];
+
+        function startGame(num) {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('game' + num).classList.add('active');
+            currentGame = num;
+            initGame(num);
+        }
+
+        function goToMenu() {
+            // Clear all intervals and timeouts
+            gameIntervals.forEach(i => clearInterval(i));
+            gameTimeouts.forEach(t => clearTimeout(t));
+            gameIntervals = [];
+            gameTimeouts = [];
+            
+            // Hide all games
+            document.querySelectorAll('.game-screen').forEach(g => g.classList.remove('active'));
+            document.getElementById('menu').style.display = 'flex';
+            
+            // Reset games
+            resetGame(currentGame);
+            currentGame = null;
+        }
+
+        function initGame(num) {
+            if (num === 1) initCatchEmoji();
+            if (num === 2) initMemoryMatch();
+            if (num === 3) initWhackMole();
+            if (num === 4) initReactionTime();
+            if (num === 5) initTypingSpeed();
+            if (num === 6) initSnake();
+            if (num === 7) initColorGuess();
+            if (num === 8) initSimon();
+            if (num === 9) initCookieClicker();
+        }
+
+        function resetGame(num) {
+            if (num === 1) {
+                document.getElementById('game1-area').innerHTML = '';
+                document.getElementById('game1-score').textContent = '0';
+            }
+            if (num === 2) {
+                document.getElementById('memory-grid').innerHTML = '';
+                document.getElementById('game2-moves').textContent = '0';
+            }
+            if (num === 3) {
+                document.getElementById('mole-grid').innerHTML = '';
+                document.getElementById('game3-score').textContent = '0';
+                document.getElementById('game3-time').textContent = '30';
+            }
+        }
+
+        // ===== GAME 1: CATCH EMOJI =====
+        function initCatchEmoji() {
+            const emojis = ['😀', '🎉', '🌟', '🔥', '💎', '🦄', '🍕', '🎸', '🚀', '👾', '🌈', '🎪', '🦋', '🍩', '🎁'];
+            const sparkles = ['✨', '💫', '⭐', '🌟', '💥'];
+            let score = 0;
+            let combo = 0;
+            let lastClick = 0;
+            const gameArea = document.getElementById('game1-area');
+            const scoreEl = document.getElementById('game1-score');
+            const comboEl = document.getElementById('game1-combo');
+
+            function createEmoji() {
+                const emoji = document.createElement('div');
+                emoji.className = 'emoji';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.left = Math.random() * (window.innerWidth - 60) + 'px';
+                emoji.style.top = Math.random() * (window.innerHeight - 100) + 80 + 'px';
+                
+                emoji.onclick = function(e) {
+                    if (this.classList.contains('popped')) return;
+                    const now = Date.now();
+                    if (now - lastClick < 1000) {
+                        combo++;
+                        if (combo >= 3) {
+                            comboEl.textContent = `🔥 ${combo}x COMBO!`;
+                            comboEl.style.opacity = 1;
+                            let t = setTimeout(() => comboEl.style.opacity = 0, 800);
+                            gameTimeouts.push(t);
+                        }
+                    } else { combo = 1; }
+                    lastClick = now;
+                    score += combo;
+                    scoreEl.textContent = score;
+                    
+                    for (let i = 0; i < 3; i++) {
+                        const sparkle = document.createElement('div');
+                        sparkle.className = 'sparkle';
+                        sparkle.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
+                        sparkle.style.left = (e.clientX + (Math.random() - 0.5) * 50) + 'px';
+                        sparkle.style.top = (e.clientY + (Math.random() - 0.5) * 50) + 'px';
+                        document.body.appendChild(sparkle);
+                        let t = setTimeout(() => sparkle.remove(), 500);
+                        gameTimeouts.push(t);
+                    }
+                    this.classList.add('popped');
+                    let t = setTimeout(() => this.remove(), 300);
+                    gameTimeouts.push(t);
+                };
+                
+                gameArea.appendChild(emoji);
+                let t = setTimeout(() => {
+                    if (!emoji.classList.contains('popped') && emoji.parentNode) {
+                        emoji.style.opacity = '0';
+                        setTimeout(() => emoji.remove(), 300);
+                    }
+                }, 3000 + Math.random() * 2000);
+                gameTimeouts.push(t);
+            }
+
+            let interval = setInterval(createEmoji, 800);
+            gameIntervals.push(interval);
+            for (let i = 0; i < 5; i++) {
+                let t = setTimeout(createEmoji, i * 200);
+                gameTimeouts.push(t);
+            }
+        }
+
+        // ===== GAME 2: MEMORY MATCH =====
+        function initMemoryMatch() {
+            const icons = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍒', '🥝', '🍑'];
+            let cards = [...icons, ...icons];
+            cards.sort(() => Math.random() - 0.5);
+            
+            let flipped = [];
+            let matched = 0;
+            let moves = 0;
+            const grid = document.getElementById('memory-grid');
+            const movesEl = document.getElementById('game2-moves');
+            const msgEl = document.getElementById('game2-msg');
+            
+            grid.innerHTML = '';
+            cards.forEach((icon, i) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card hidden';
+                card.dataset.icon = icon;
+                card.dataset.index = i;
+                card.onclick = () => flipCard(card);
+                grid.appendChild(card);
+            });
+
+            function flipCard(card) {
+                if (flipped.length >= 2 || card.classList.contains('matched') || flipped.includes(card)) return;
+                
+                card.classList.remove('hidden');
+                card.textContent = card.dataset.icon;
+                flipped.push(card);
+                
+                if (flipped.length === 2) {
+                    moves++;
+                    movesEl.textContent = moves;
+                    
+                    if (flipped[0].dataset.icon === flipped[1].dataset.icon) {
+                        flipped.forEach(c => c.classList.add('matched'));
+                        matched += 2;
+                        flipped = [];
+                        if (matched === cards.length) {
+                            msgEl.textContent = `🎉 You won in ${moves} moves!`;
+                        }
+                    } else {
+                        let t = setTimeout(() => {
+                            flipped.forEach(c => {
+                                c.classList.add('hidden');
+                                c.textContent = '';
+                            });
+                            flipped = [];
+                        }, 1000);
+                        gameTimeouts.push(t);
+                    }
+                }
+            }
+        }
+
+        // ===== GAME 3: WHACK-A-MOLE =====
+        function initWhackMole() {
+            let score = 0;
+            let timeLeft = 30;
+            let activeHole = null;
+            const grid = document.getElementById('mole-grid');
+            const scoreEl = document.getElementById('game3-score');
+            const timeEl = document.getElementById('game3-time');
+            const msgEl = document.getElementById('game3-msg');
+            
+            grid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'mole-hole';
+                hole.onclick = () => whack(hole);
+                grid.appendChild(hole);
+            }
+            
+            const holes = grid.querySelectorAll('.mole-hole');
+
+            function showMole() {
+                if (activeHole) activeHole.classList.remove('active');
+                activeHole = holes[Math.floor(Math.random() * holes.length)];
+                activeHole.classList.add('active');
+                activeHole.textContent = '🐹';
+            }
+
+            function whack(hole) {
+                if (hole.classList.contains('active')) {
+                    score++;
+                    scoreEl.textContent = score;
+                    hole.classList.remove('active');
+                    hole.classList.add('hit');
+                    hole.textContent = '💥';
+                    let t = setTimeout(() => {
+                        hole.classList.remove('hit');
+                        hole.textContent = '';
+                    }, 200);
+                    gameTimeouts.push(t);
+                }
+            }
+
+            let moleInterval = setInterval(showMole, 800);
+            gameIntervals.push(moleInterval);
+            
+            let timerInterval = setInterval(() => {
+                timeLeft--;
+                timeEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(moleInterval);
+                    clearInterval(timerInterval);
+                    if (activeHole) activeHole.classList.remove('active');
+                    msgEl.textContent = `⏱️ Time's up! Final score: ${score}`;
+                    holes.forEach(h => h.style.pointerEvents = 'none');
+                }
+            }, 1000);
+            gameIntervals.push(timerInterval);
+        }
+
+        // ===== GAME 4: REACTION TIME =====
+        function initReactionTime() {
+            const box = document.getElementById('reaction-box');
+            const stats = document.getElementById('reaction-stats');
+            let times = [];
+            let waiting = false;
+            let startTime = 0;
+            let timeout = null;
+
+            box.className = '';
+            box.textContent = 'Click to Start!';
+            stats.innerHTML = '';
+
+            box.onclick = () => {
+                if (box.classList.contains('result')) {
+                    // Start new round
+                    box.className = 'waiting';
+                    box.textContent = 'Wait for green...';
+                    waiting = true;
+                    let delay = 1000 + Math.random() * 3000;
+                    timeout = setTimeout(() => {
+                        box.className = 'go';
+                        box.textContent = 'CLICK NOW!';
+                        startTime = Date.now();
+                        waiting = false;
+                    }, delay);
+                    gameTimeouts.push(timeout);
+                } else if (waiting) {
+                    // Clicked too early
+                    clearTimeout(timeout);
+                    box.className = 'result';
+                    box.textContent = '❌ Too early! Click to try again.';
+                    waiting = false;
+                } else if (box.classList.contains('go')) {
+                    // Got it!
+                    let time = Date.now() - startTime;
+                    times.push(time);
+                    let avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                    box.className = 'result';
+                    box.textContent = `⚡ ${time}ms! Click to go again.`;
+                    stats.innerHTML = `Best: ${Math.min(...times)}ms | Avg: ${avg}ms | Tries: ${times.length}`;
+                } else {
+                    // First click - start waiting
+                    box.className = 'waiting';
+                    box.textContent = 'Wait for green...';
+                    waiting = true;
+                    let delay = 1000 + Math.random() * 3000;
+                    timeout = setTimeout(() => {
+                        box.className = 'go';
+                        box.textContent = 'CLICK NOW!';
+                        startTime = Date.now();
+                        waiting = false;
+                    }, delay);
+                    gameTimeouts.push(timeout);
+                }
+            };
+        }
+
+        // ===== GAME 5: TYPING SPEED =====
+        function initTypingSpeed() {
+            document.getElementById('typing-timer').textContent = '30';
+            document.getElementById('typing-word').textContent = 'Press Start!';
+            document.getElementById('typing-input').value = '';
+            document.getElementById('typing-input').disabled = true;
+            document.getElementById('game5-score').textContent = '0';
+        }
+
+        function startTypingGame() {
+            const words = ['apple', 'banana', 'cherry', 'dragon', 'elephant', 'flower', 'guitar', 'happy', 'island', 'jungle', 'kitten', 'lemon', 'mango', 'night', 'orange', 'purple', 'queen', 'river', 'sunset', 'tiger', 'umbrella', 'violet', 'wonder', 'yellow', 'zebra', 'amazing', 'beautiful', 'creative', 'delicious', 'excellent'];
+            let score = 0;
+            let timeLeft = 30;
+            const wordEl = document.getElementById('typing-word');
+            const inputEl = document.getElementById('typing-input');
+            const timerEl = document.getElementById('typing-timer');
+            const scoreEl = document.getElementById('game5-score');
+
+            inputEl.disabled = false;
+            inputEl.focus();
+            inputEl.value = '';
+            
+            function newWord() {
+                return words[Math.floor(Math.random() * words.length)];
+            }
+            
+            let currentWord = newWord();
+            wordEl.textContent = currentWord;
+            
+            inputEl.oninput = () => {
+                const val = inputEl.value.toLowerCase().trim();
+                if (val === currentWord) {
+                    score++;
+                    scoreEl.textContent = score;
+                    inputEl.value = '';
+                    inputEl.className = 'correct';
+                    currentWord = newWord();
+                    wordEl.textContent = currentWord;
+                    let t = setTimeout(() => inputEl.className = '', 200);
+                    gameTimeouts.push(t);
+                } else if (!currentWord.startsWith(val)) {
+                    inputEl.className = 'wrong';
+                } else {
+                    inputEl.className = '';
+                }
+            };
+
+            let timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    inputEl.disabled = true;
+                    wordEl.textContent = `🎉 Game Over! You typed ${score} words!`;
+                }
+            }, 1000);
+            gameIntervals.push(timerInterval);
+        }
+
+        // ===== GAME 6: SNAKE =====
+        let snake, food, direction, snakeInterval;
+        function initSnake() {
+            const canvas = document.getElementById('snake-canvas');
+            const ctx = canvas.getContext('2d');
+            const size = 20;
+            let score = 0;
+            snake = [{x: 10, y: 10}];
+            direction = 'right';
+            food = spawnFood();
+            document.getElementById('game6-score').textContent = '0';
+
+            function spawnFood() {
+                return {
+                    x: Math.floor(Math.random() * 20),
+                    y: Math.floor(Math.random() * 20)
+                };
+            }
+
+            function draw() {
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, 400, 400);
+                
+                // Draw snake
+                snake.forEach((seg, i) => {
+                    ctx.fillStyle = i === 0 ? '#00ff88' : '#00cc66';
+                    ctx.fillRect(seg.x * size + 1, seg.y * size + 1, size - 2, size - 2);
+                });
+                
+                // Draw food
+                ctx.fillStyle = '#ff6b6b';
+                ctx.beginPath();
+                ctx.arc(food.x * size + size/2, food.y * size + size/2, size/2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            function move() {
+                const head = {...snake[0]};
+                if (direction === 'up') head.y--;
+                if (direction === 'down') head.y++;
+                if (direction === 'left') head.x--;
+                if (direction === 'right') head.x++;
+
+                // Wall collision
+                if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) {
+                    gameOver(); return;
+                }
+                // Self collision
+                if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+                    gameOver(); return;
+                }
+
+                snake.unshift(head);
+                
+                if (head.x === food.x && head.y === food.y) {
+                    score++;
+                    document.getElementById('game6-score').textContent = score;
+                    food = spawnFood();
+                } else {
+                    snake.pop();
+                }
+                draw();
+            }
+
+            function gameOver() {
+                clearInterval(snakeInterval);
+                const ctx = document.getElementById('snake-canvas').getContext('2d');
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, 400, 400);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', 200, 180);
+                ctx.font = '20px Arial';
+                ctx.fillText(`Score: ${score}`, 200, 220);
+                ctx.fillText('Press any arrow to restart', 200, 260);
+            }
+
+            draw();
+            snakeInterval = setInterval(move, 150);
+            gameIntervals.push(snakeInterval);
+
+            document.onkeydown = (e) => {
+                if (!document.getElementById('game6').classList.contains('active')) return;
+                const key = e.key;
+                if (key === 'ArrowUp' && direction !== 'down') direction = 'up';
+                if (key === 'ArrowDown' && direction !== 'up') direction = 'down';
+                if (key === 'ArrowLeft' && direction !== 'right') direction = 'left';
+                if (key === 'ArrowRight' && direction !== 'left') direction = 'right';
+            };
+        }
+        function snakeDir(dir) {
+            if (dir === 'up' && direction !== 'down') direction = 'up';
+            if (dir === 'down' && direction !== 'up') direction = 'down';
+            if (dir === 'left' && direction !== 'right') direction = 'left';
+            if (dir === 'right' && direction !== 'left') direction = 'right';
+        }
+
+        // ===== GAME 7: COLOR GUESS =====
+        function initColorGuess() {
+            let score = 0;
+            let streak = 0;
+            document.getElementById('game7-score').textContent = '0';
+            document.getElementById('game7-streak').textContent = '0';
+            newColorRound();
+        }
+
+        function newColorRound() {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            const correct = `rgb(${r}, ${g}, ${b})`;
+            
+            document.getElementById('color-box').style.background = correct;
+            
+            // Generate options
+            const options = [correct];
+            while (options.length < 4) {
+                const fakeR = Math.floor(Math.random() * 256);
+                const fakeG = Math.floor(Math.random() * 256);
+                const fakeB = Math.floor(Math.random() * 256);
+                const fake = `rgb(${fakeR}, ${fakeG}, ${fakeB})`;
+                if (!options.includes(fake)) options.push(fake);
+            }
+            options.sort(() => Math.random() - 0.5);
+            
+            const container = document.getElementById('color-options');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'color-option';
+                btn.textContent = opt;
+                btn.onclick = () => checkColorGuess(btn, opt === correct);
+                container.appendChild(btn);
+            });
+            document.getElementById('game7-msg').textContent = 'Guess the RGB color code!';
+        }
+
+        function checkColorGuess(btn, isCorrect) {
+            const scoreEl = document.getElementById('game7-score');
+            const streakEl = document.getElementById('game7-streak');
+            const msgEl = document.getElementById('game7-msg');
+            let score = parseInt(scoreEl.textContent);
+            let streak = parseInt(streakEl.textContent);
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+                score++; streak++;
+                msgEl.textContent = '✅ Correct!';
+            } else {
+                btn.classList.add('wrong');
+                streak = 0;
+                msgEl.textContent = '❌ Wrong!';
+            }
+            scoreEl.textContent = score;
+            streakEl.textContent = streak;
+            
+            document.querySelectorAll('.color-option').forEach(b => b.onclick = null);
+            let t = setTimeout(newColorRound, 1500);
+            gameTimeouts.push(t);
+        }
+
+        // ===== GAME 8: SIMON SAYS =====
+        let simonSequence = [];
+        let simonIndex = 0;
+        let simonPlaying = false;
+
+        function initSimon() {
+            simonSequence = [];
+            simonIndex = 0;
+            simonPlaying = false;
+            document.getElementById('game8-level').textContent = '1';
+            document.getElementById('simon-info').textContent = 'Watch the pattern, then repeat it!';
+            document.getElementById('simon-start').style.display = 'block';
+            
+            document.querySelectorAll('.simon-btn').forEach(btn => {
+                btn.onclick = () => simonPlayerClick(btn.dataset.color);
+            });
+        }
+
+        function startSimon() {
+            document.getElementById('simon-start').style.display = 'none';
+            simonSequence = [];
+            simonNextRound();
+        }
+
+        function simonNextRound() {
+            simonIndex = 0;
+            simonPlaying = false;
+            document.getElementById('game8-level').textContent = simonSequence.length + 1;
+            document.getElementById('simon-info').textContent = 'Watch...';
+            
+            const colors = ['red', 'blue', 'green', 'yellow'];
+            simonSequence.push(colors[Math.floor(Math.random() * 4)]);
+            
+            let i = 0;
+            let showInterval = setInterval(() => {
+                if (i >= simonSequence.length) {
+                    clearInterval(showInterval);
+                    simonPlaying = true;
+                    document.getElementById('simon-info').textContent = 'Your turn!';
+                    return;
+                }
+                flashSimon(simonSequence[i]);
+                i++;
+            }, 800);
+            gameIntervals.push(showInterval);
+        }
+
+        function flashSimon(color) {
+            const btn = document.querySelector(`.simon-btn.${color}`);
+            btn.classList.add('flash');
+            let t = setTimeout(() => btn.classList.remove('flash'), 500);
+            gameTimeouts.push(t);
+        }
+
+        function simonPlayerClick(color) {
+            if (!simonPlaying) return;
+            flashSimon(color);
+            
+            if (color === simonSequence[simonIndex]) {
+                simonIndex++;
+                if (simonIndex >= simonSequence.length) {
+                    document.getElementById('simon-info').textContent = '✅ Correct! Next round...';
+                    let t = setTimeout(simonNextRound, 1000);
+                    gameTimeouts.push(t);
+                }
+            } else {
+                simonPlaying = false;
+                document.getElementById('simon-info').textContent = `❌ Game Over! You reached level ${simonSequence.length}`;
+                document.getElementById('simon-start').style.display = 'block';
+            }
+        }
+
+        // ===== GAME 9: COOKIE CLICKER =====
+        let cookies = 0;
+        let cookiesPerClick = 1;
+        let cookiesPerSec = 0;
+        let upgrades = { cursor: 0, grandma: 0, farm: 0, factory: 0 };
+        let upgradeCosts = { cursor: 10, grandma: 50, farm: 200, factory: 500 };
+
+        function initCookieClicker() {
+            cookies = 0;
+            cookiesPerClick = 1;
+            cookiesPerSec = 0;
+            upgrades = { cursor: 0, grandma: 0, farm: 0, factory: 0 };
+            upgradeCosts = { cursor: 10, grandma: 50, farm: 200, factory: 500 };
+            updateCookieDisplay();
+            
+            let cookieInterval = setInterval(() => {
+                if (!document.getElementById('game9').classList.contains('active')) return;
+                cookies += cookiesPerSec;
+                updateCookieDisplay();
+            }, 1000);
+            gameIntervals.push(cookieInterval);
+        }
+
+        function clickCookie(e) {
+            cookies += cookiesPerClick;
+            updateCookieDisplay();
+            
+            // Floating text
+            const text = document.createElement('div');
+            text.className = 'float-text';
+            text.textContent = `+${cookiesPerClick}`;
+            text.style.left = e.clientX + 'px';
+            text.style.top = e.clientY + 'px';
+            document.body.appendChild(text);
+            let t = setTimeout(() => text.remove(), 1000);
+            gameTimeouts.push(t);
+        }
+
+        function buyUpgrade(type) {
+            const cost = upgradeCosts[type];
+            if (cookies >= cost) {
+                cookies -= cost;
+                upgrades[type]++;
+                upgradeCosts[type] = Math.floor(cost * 1.5);
+                
+                if (type === 'cursor') cookiesPerClick++;
+                if (type === 'grandma') cookiesPerSec += 1;
+                if (type === 'farm') cookiesPerSec += 5;
+                if (type === 'factory') cookiesPerSec += 20;
+                
+                updateCookieDisplay();
+            }
+        }
+
+        function updateCookieDisplay() {
+            document.getElementById('cookie-count').textContent = Math.floor(cookies);
+            document.getElementById('cookies-per-sec').textContent = cookiesPerSec;
+            
+            document.getElementById('buy-cursor').innerHTML = `👆 Cursor (${upgradeCosts.cursor}🍪)<br><small>+1/click (${upgrades.cursor})</small>`;
+            document.getElementById('buy-grandma').innerHTML = `👵 Grandma (${upgradeCosts.grandma}🍪)<br><small>+1/sec (${upgrades.grandma})</small>`;
+            document.getElementById('buy-farm').innerHTML = `🌾 Farm (${upgradeCosts.farm}🍪)<br><small>+5/sec (${upgrades.farm})</small>`;
+            document.getElementById('buy-factory').innerHTML = `🏭 Factory (${upgradeCosts.factory}🍪)<br><small>+20/sec (${upgrades.factory})</small>`;
+            
+            document.getElementById('buy-cursor').disabled = cookies < upgradeCosts.cursor;
+            document.getElementById('buy-grandma').disabled = cookies < upgradeCosts.grandma;
+            document.getElementById('buy-farm').disabled = cookies < upgradeCosts.farm;
+            document.getElementById('buy-factory').disabled = cookies < upgradeCosts.factory;
+        }
+    </script>
+</body>
+</html>
